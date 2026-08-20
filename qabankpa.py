@@ -1,205 +1,129 @@
-import math
+from LoanProcessingSystem import process_loan
 
-def process_loan(age, monthly_salary, existing_loan, credit_score,
-                 employment_type, requested_loan, tenure):
+passed = 0
+failed = 0
 
-    if not isinstance(age, int) or not isinstance(credit_score, int) or not isinstance(tenure, int):
-        return "INVALID INPUT"
 
-    if age < 21 or age > 60:
-        return "REJECTED"
+def test(name, actual, expected):
+    global passed, failed
 
-    if monthly_salary <= 0:
-        return "REJECTED"
-
-    if credit_score < 650:
-        return "REJECTED"
-
-    if tenure <= 0:
-        return "INVALID INPUT"
-
-    annual_salary = monthly_salary * 12
-    debt_to_income_ratio = (existing_loan / annual_salary) * 100
-
-    if debt_to_income_ratio > 50:
-        return "REJECTED"
-
-    if employment_type.lower() == "salaried":
-        eligible_loan = annual_salary * 5
-    elif employment_type.lower() == "self-employed":
-        eligible_loan = annual_salary * 4
+    if actual == expected:
+        print(name + " : PASSED")
+        passed += 1
     else:
-        return "INVALID INPUT"
-
-    eligible_loan = max(0, eligible_loan - existing_loan)
-
-    if requested_loan <= 0:
-        return "INVALID INPUT"
-
-    if requested_loan > eligible_loan:
-        return "REJECTED"
-
-    if credit_score >= 800:
-        interest_rate = 7.5
-    elif credit_score >= 750:
-        interest_rate = 8.5
-    elif credit_score >= 700:
-        interest_rate = 10.0
-    else:
-        interest_rate = 12.0
-
-    monthly_rate = interest_rate / (12 * 100)
-    months = tenure * 12
-
-    emi = requested_loan * monthly_rate * pow(1 + monthly_rate, months)
-    emi = emi / (pow(1 + monthly_rate, months) - 1)
-
-    return {
-        "status": "APPROVED",
-        "eligible_loan": eligible_loan,
-        "interest_rate": interest_rate,
-        "emi": round(emi, 2),
-        "dti": round(debt_to_income_ratio, 2)
-    }
+        print(name + " : FAILED")
+        print("Expected:", expected)
+        print("Actual:", actual)
+        failed += 1
 
 
-def test_case(test_name, age, salary, existing_loan, credit_score,
-              employment, requested_loan, tenure):
+print("========== LOAN PROCESSING QA ==========")
 
-    try:
-        result = process_loan(
-            age,
-            salary,
-            existing_loan,
-            credit_score,
-            employment,
-            requested_loan,
-            tenure
-        )
-
-        print("\nTest:", test_name)
-        print("Input:")
-        print("Age:", age)
-        print("Salary:", salary)
-        print("Existing Loan:", existing_loan)
-        print("Credit Score:", credit_score)
-        print("Employment:", employment)
-        print("Requested Loan:", requested_loan)
-        print("Tenure:", tenure)
-        print("Result:", result)
-
-    except Exception as e:
-        print("\nTest:", test_name)
-        print("Result: INVALID INPUT")
-        print("Error:", e)
-
-
-print("========== LOAN PROCESSING QA TESTING ==========")
-
-test_case(
-    "Minimum Age Boundary",
-    21, 50000, 50000, 750,
-    "Salaried", 1000000, 5
+test(
+    "Minimum Age",
+    process_loan("C101", 21, 50000, 0, 750, "Salaried", 100000, 5),
+    "APPROVED"
 )
 
-test_case(
-    "Maximum Age Boundary",
-    60, 50000, 50000, 750,
-    "Salaried", 1000000, 5
+test(
+    "Maximum Age",
+    process_loan("C102", 60, 50000, 0, 750, "Salaried", 100000, 5),
+    "APPROVED"
 )
 
-test_case(
-    "Age Below Minimum",
-    20, 50000, 50000, 750,
-    "Salaried", 1000000, 5
+test(
+    "Invalid Minimum Age",
+    process_loan("C103", 20, 50000, 0, 750, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "Age Above Maximum",
-    61, 50000, 50000, 750,
-    "Salaried", 1000000, 5
+test(
+    "Invalid Maximum Age",
+    process_loan("C104", 61, 50000, 0, 750, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "Invalid Zero Salary",
-    30, 0, 50000, 750,
-    "Salaried", 100000, 5
+test(
+    "Invalid Salary",
+    process_loan("C105", 30, 0, 0, 750, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "Invalid Negative Salary",
-    30, -10000, 50000, 750,
-    "Salaried", 100000, 5
-)
-
-test_case(
+test(
     "Poor Credit Score",
-    30, 50000, 50000, 600,
-    "Salaried", 100000, 5
+    process_loan("C106", 30, 50000, 0, 600, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "High Existing Loan",
-    30, 50000, 5000000, 750,
-    "Salaried", 100000, 5
+test(
+    "Existing Loan Exceeding Threshold",
+    process_loan("C107", 30, 50000, 5000000, 750, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
+test(
     "High Debt To Income Ratio",
-    30, 50000, 400000, 750,
-    "Salaried", 100000, 5
+    process_loan("C108", 30, 50000, 400000, 750, "Salaried", 100000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "Salaried Employee",
-    30, 80000, 100000, 780,
-    "Salaried", 1000000, 5
+test(
+    "Salaried Employment",
+    process_loan("C109", 30, 80000, 100000, 780, "Salaried", 1000000, 5),
+    "APPROVED"
 )
 
-test_case(
-    "Self Employed Employee",
-    30, 80000, 100000, 780,
-    "Self-Employed", 1000000, 5
+test(
+    "Self Employed Employment",
+    process_loan("C110", 30, 80000, 100000, 780, "Self-Employed", 1000000, 5),
+    "APPROVED"
 )
 
-test_case(
-    "Invalid Employment Category",
-    30, 80000, 100000, 780,
-    "Student", 1000000, 5
+test(
+    "Invalid Employment",
+    process_loan("C111", 30, 80000, 100000, 780, "Student", 100000, 5),
+    "INVALID INPUT"
 )
 
-test_case(
-    "Minimum Loan Amount",
-    30, 50000, 0, 750,
-    "Salaried", 1, 5
+test(
+    "Boundary Loan Amount",
+    process_loan("C112", 30, 50000, 0, 750, "Salaried", 1, 5),
+    "APPROVED"
 )
 
-test_case(
-    "Invalid Zero Loan Amount",
-    30, 50000, 0, 750,
-    "Salaried", 0, 5
+test(
+    "Invalid Loan Amount",
+    process_loan("C113", 30, 50000, 0, 750, "Salaried", 0, 5),
+    "INVALID INPUT"
 )
 
-test_case(
+test(
     "Loan Exceeding Eligibility",
-    30, 50000, 0, 750,
-    "Salaried", 5000000, 5
+    process_loan("C114", 30, 50000, 0, 750, "Salaried", 5000000, 5),
+    "REJECTED"
 )
 
-test_case(
-    "EMI Calculation Accuracy",
-    30, 100000, 0, 800,
-    "Salaried", 1000000, 5
+test(
+    "Invalid Tenure",
+    process_loan("C115", 30, 50000, 0, 750, "Salaried", 100000, -5),
+    "INVALID INPUT"
 )
 
-test_case(
-    "Invalid Negative Tenure",
-    30, 50000, 0, 750,
-    "Salaried", 100000, -5
-)
+try:
+    process_loan("C116", 30, "abc", 0, 750, "Salaried", 100000, 5)
+    print("Exception Handling : FAILED")
+    failed += 1
+except Exception:
+    print("Exception Handling : PASSED")
+    passed += 1
 
-test_case(
-    "Invalid String Age",
-    "Thirty", 50000, 0, 750,
-    "Salaried", 100000, 5
-)
+
+print("\n========== QA SUMMARY ==========")
+print("Passed:", passed)
+print("Failed:", failed)
+
+if failed == 0:
+    print("ALL QA TESTS PASSED")
+else:
+    print("QA TESTS FAILED")
+    exit(1)
